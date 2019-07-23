@@ -11,6 +11,7 @@ same instructions are also summarized in [CONTRIBUTING.md].
 ## Collaborators
 
 - Sophia Chau
+- Natali RB
 
 ## Data
 
