@@ -5,6 +5,7 @@ My work at the SESYNC Summer Institute for SES.
 ## Collaborators
 
 - Sophia Chau
+- Natali RB
 
 ## Data
 
