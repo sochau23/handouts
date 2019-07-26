@@ -1,60 +1,66 @@
 # Documenting and Publishing your Data Worksheet
 
 # Preparing Data for Publication
-library(...)
+library(tidyverse)
 
-stm_dat <- ...("data/StormEvents.csv")
+stm_dat <- read_csv("data/StormEvents.csv")
 
-...(stm_dat)
-...(stm_dat)
+head(stm_dat)
+tail(stm_dat)
 
-...(stm_dat$EVENT_NARRATIVE) 
+str(stm_dat)
 
-...('data_package', showWarnings = FALSE)
-...(stm_dat, "data_package/StormEvents_d2006.csv")
+unique(stm_dat$EVENT_NARRATIVE) # check case, white space, etc.
+
+dir.create('storm_project', showWarnings = FALSE) # create directory for project
+write_csv(stm_dat, "storm_project/StormEvents_d2006.csv") # write out data file as a new csv file in the directory
 
 # Creating metadata
-library(...) ; library(...)
+library(dataspice) ; library(here) # dataspice package to create metadata in the EML metadata standard
 
-...(dir = "data_package")
+create_spice(dir = "storm_project") # create empty data package templates to fill out -> "metadata" folder under "Files" tab
 
-...(stm_dat$YEAR)
-...(stm_dat$BEGIN_LAT, na.rm=TRUE)
-...(stm_dat$BEGIN_LON, na.rm=TRUE)
+# obtain temporal and geographic extenct info using range() function
+range(stm_dat$YEAR) 
+range(stm_dat$BEGIN_LAT, na.rm=TRUE)
+range(stm_dat$BEGIN_LON, na.rm=TRUE)
 
-...(metadata_dir = here("data_package", "metadata"))
+# 
+edit_biblio(metadata_dir = here("storm_project", "metadata"))
 
-...(metadata_dir = here("data_package", "metadata"))
+edit_creators(metadata_dir = here("storm_project", "metadata"))
 
-...(data_path = here("data_package"),
-            access_path = here("data_package", "metadata", "..."))
-...(metadata_dir = here("data_package", "metadata"))
+# tries to discover the metadata for itself, automatically fills in fields
+prep_access(data_path = here("storm_project"),
+            access_path = here("storm_project", "metadata", "access.csv"))
+edit_access(metadata_dir = here("storm_project", "metadata"))
 
-...(data_path = here("data_package"),
-                attributes_path = here("data_package", "metadata", "..."))
-...(metadata_dir = here("data_package", "metadata"))
+prep_attributes(data_path = here("storm_project"),
+                attributes_path = here("storm_project", "metadata", "attributes.csv"))
+edit_attributes(metadata_dir = here("storm_project", "metadata"))
 
-...(path = here("data_package", "metadata"))
+# write our metadata to aa json-Id file
+write_spice(path = here("storm_project", "metadata"))
 
 library(...) ; library(...) ; library(...)
 
-json <- ...("data_package/metadata/dataspice.json")
+json <- ...("storm_project/metadata/dataspice.json")
 eml <- ...(json)
-...(eml, "data_package/metadata/dataspice.xml")
+...(eml, "storm_project/metadata/dataspice.xml")
 
 # Creating a data package
-library(...) ; library(...)
+library(datapack) ; library(uuid)
 
 dp <- ...("DataPackage") # create empty data package
 
-... <- "data_package/metadata/dataspice.xml"
+... <- "storm_project/metadata/dataspice.xml"
 ... <- paste("urn:uuid:", UUIDgenerate(), sep = "")
 
 ... <- new("DataObject", id = ..., format = "eml://ecoinformatics.org/eml-2.1.1", file = ...)
 
 dp <- ...(dp, ...)  # add metadata file to data package
 
-... <- "data_package/StormEvents_d2006.csv"
+... <- "storm_project/StormEvents_d2006.csv"
 ... <- paste("urn:uuid:", UUIDgenerate(), sep = "")
 
 ... <- new("DataObject", id = ..., format = "text/csv", filename = ...) 
@@ -68,7 +74,7 @@ filePath <- file.path(sprintf("%s/%s.rdf", tempdir(), serializationId))
 status <- serializePackage(..., filePath, id=serializationId, resolveURI = "")
 
 ... <- serializeToBagIt(...) # right now this creates a zipped file in the tmp directory
-file.copy(..., "data_package/Storm_dp.zip") # now we have to move the file out of the tmp directory
+file.copy(..., "storm_project/Storm_dp.zip") # now we have to move the file out of the tmp directory
 
 # this is a static copy of the DataONE member nodes as of July, 2019
 read.csv("data/Nodes.csv")

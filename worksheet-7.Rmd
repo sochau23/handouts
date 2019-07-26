@@ -1,12 +1,15 @@
 ---
 output: html_document
+runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
 library(knitr)
+library(tools) # allows addition of extra code modifications at the top of each code chunk
 opts_chunk$set(
   message = FALSE,
-  warning = FALSE)
+  warning = FALSE, 
+  cache=TRUE) # any code chunks that have been evaluated will not run again with "Knit"
 ```
 
 ## Seeing is Believing
@@ -21,84 +24,93 @@ Plain text about ...something... important.
 Bulleted Lists
 
 - SQL
-- ...
+- Python
+- R
 
 Numbered Lists
 
 6. SQL
-1. ...
+1. Python
+5. R
 
-Tables
+Tables (actual number of hyphens don't really matter)
 
-id | ...
-...
+id | treatment
+---|----------
 1  | control
 2  | exclosure
 
 # The Biggest Heading
 
-## ...
+## The Second Biggest Heading
 
-... The Third Biggest Heading
+### The Third Biggest Heading
 
 ## Chunks
 
 ```
-The ... indicated by asterisks here does not become
+The *emphasis* indicated by asterisks here does not become
 italicized, as it would outside the "code fence".
 ```
 
 ```
-seq(...)
+seq(1,10)
 ```
 
 ## RMarkdown
 
-```...
+```{r}
 seq(1, 10)
 ```
 
 ## Chunk Options
 
-```...
+```{r, echo=FALSE} 
+# output renders without input
 seq(1, 10)
 ```
 
 ## Chunk Labels
 
-```{...}
+```{r does_not_run, eval=FALSE}
+# prevent evaluation and output rendering
 seq(1, 10)
 ```
 
 ## Sourced Input
 
-```{... load_data, echo = FALSE}
-...
+```{r load_data, context = 'data', echo = FALSE, cache.extra = md5sum('worksheet-7.R')}
+# last arugment above says 'this chunk runs if the source document worksheet-7.R has changed since the last time the doc was knitted.' 'Source' exports the following tasks to the other external console, this brings results back into RMarkdown
+source('worksheet-7.R')
+cty_to_cty <- subset(cty_to_cty, !is.na(movers_state_est))
 ```
 
-```{... bar_plot, echo = FALSE}
+```{r bar_plot}
 library(ggplot2)
-ggplot(...,
-  aes(x = current_state, y = sum_new_movers)) +
+ggplot(state_movers,
+  aes(
+    x = reorder(current_state, -sum_new_movers), 
+    y = sum_new_movers)) +
   geom_bar(stat = 'identity') +
   theme(axis.text.x = element_text(
     angle = 90, hjust = 1))
 ```
 
+
 ## Alternative Engines
 
-```{...}
+```{python eval=FALSE}
 greeting = 'Hello, {}!'
 print(greeting.format('World'))
 ```
 
-```{...}
+```{bash}
 echo "Hello, ${USER}!"
 ```
 
 ## Cache Dependencies
 
-```{... clean_bar_plot, ..., echo = FALSE}
+```{r clean_bar_plot, dependson = 'load_data', echo = FALSE}
 ggplot(state_movers,
   aes(
     x = reorder(current_state, -sum_new_movers), 
@@ -110,15 +122,17 @@ ggplot(state_movers,
 
 ## Input Objects
 
-```{..., echo = FALSE}
-...('pick_state',
+```{r, echo = FALSE}
+selectInput('pick_state',
   label = 'Pick a State',
   choices = unique(cty_to_cty[['current_state']]))
+
+# Creates input widget that labels a state picked by the user as 'pick_state' and uses that as an input in the widget
 ```
 
-```{..., context = 'server'}
+```{r, context = 'server'}
 library(dplyr)
-... <- ...({
+output[['mov_plot']] <- renderPlot({
 cty_to_cty %>%
     filter(current_state == input[['pick_state']]) %>%
     group_by(prior_1year_state) %>%
@@ -129,26 +143,30 @@ cty_to_cty %>%
 })
 ```
 
-```{..., echo = FALSE}
-...
+```{r, echo = FALSE}
+plotOutput('mov_plot')
 ```
 
 ## Reactivity
 
-```{..., context = 'server'}
-plot_data <- ...
-  filter(cty_to_cty, current_state == input[['pick_state']]) %>%
+```{r, context = 'server'}
+plot_data <- reactive({
+    filter(cty_to_cty, current_state == input[['pick_state']]) %>%
     group_by(prior_1year_state) %>%
     summarise(sum_new_movers = sum(movers_state_est, na.rm = TRUE))
 })
 output[['react_mov_plot']] <- renderPlot({
-  ... %>%
-  ggplot(aes(x = prior_1year_state, y = sum_new_movers)) +
+  plot_data() %>%
+    ggplot(aes(x = prior_1year_state, y = sum_new_movers)) +
        geom_bar(stat = 'identity') +
        theme(axis.text.x = element_text(angle = 90, hjust = 1))
 })
 ```
 
-```{..., echo = FALSE}
-plotOutput(...)
+
+```{r, echo = FALSE}
+plotOutput('react_mov_plot')
 ```
+
+
+
